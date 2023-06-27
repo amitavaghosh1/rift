@@ -18,6 +18,8 @@ func main() {
 	switch sub {
 	case "cloudwatch":
 		cmd = commander.NewCloudWatch()
+	case "sqs":
+		cmd = commander.NewSQSWatch()
 	default:
 		cmd = commander.NoopCommander{}
 	}

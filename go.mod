@@ -3,9 +3,12 @@ module rift
 go 1.18
 
 require (
+	github.com/aws/aws-sdk-go v1.44.290
 	github.com/aws/aws-sdk-go-v2 v1.18.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.27
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.21.2
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.23.2
+	github.com/fatih/color v1.15.0
 	github.com/go-playground/validator/v10 v10.14.1
 	github.com/pkg/errors v0.9.1
 	google.golang.org/protobuf v1.31.0
@@ -22,7 +25,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.19.2 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
-	github.com/fatih/color v1.15.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
