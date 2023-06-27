@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package cloudwatchlog;
+option go_package = "models/cloudwatchlog";
+
+message LogEvent {
+    string environment = 1;
+    string request_id = 2;
+    string level = 3;
+    string time = 4;
+    string msg = 5;
+
+    optional string service = 6;
+    optional string amazon_trace_id = 7;
+    optional string host = 8;
+    optional string location = 9;
+    optional string incap_id = 10;
+    optional int64 duration = 11;
+}
