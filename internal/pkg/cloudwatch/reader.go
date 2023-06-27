@@ -38,14 +38,14 @@ func NewStream(opts StreamOpts, done chan struct{}) *CloudWatchStreamer {
 		eventsChan: make(chan types.OutputLogEvent, 100),
 	}
 
-	if err := c.init(context.Background()); err != nil {
+	if err := c.init(context.Background(), 10); err != nil {
 		log.Fatalf("%+v", errors.Wrap(err, "failed_to_start"))
 	}
 
 	return c
 }
 
-func (c *CloudWatchStreamer) init(ctx context.Context) error {
+func (c *CloudWatchStreamer) init(ctx context.Context, retries int) error {
 	cfg, err := config.LoadDefaultConfig(
 		ctx,
 		config.WithRegion(c.opts.Region),
@@ -74,8 +74,13 @@ func (c *CloudWatchStreamer) init(ctx context.Context) error {
 		streamName = logStream.LogStreamName
 	}
 
-	if streamName == nil {
+	if streamName == nil && retries <= 0 {
 		return errors.New("log_stream_not_found")
+	}
+
+	if streamName == nil {
+		log.Println("retrying ", retries-1)
+		return c.init(ctx, retries-1)
 	}
 
 	c.client = client

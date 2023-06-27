@@ -15,7 +15,10 @@ import (
 )
 
 type CloudWatchFormatter struct {
-	TextFormat bool
+	TextFormat   bool
+	Pattern      string
+	ShouldFilter bool
+	Filter       Filter
 }
 
 func (cf CloudWatchFormatter) Display(streamName string, message string) {
@@ -26,12 +29,20 @@ func (cf CloudWatchFormatter) Display(streamName string, message string) {
 		return
 	}
 
+	formatter := cf.formatJSON
 	if cf.TextFormat {
-		cf.formatText(event, streamName)
+		formatter = cf.formatText
+	}
+
+	if !cf.ShouldFilter {
+		formatter(event, streamName)
 		return
 	}
 
-	cf.formatJSON(event, streamName)
+	if cf.Filter(message, cf.Pattern) {
+		formatter(event, streamName)
+	}
+
 }
 
 type CloudWatchJSONFormat struct {
