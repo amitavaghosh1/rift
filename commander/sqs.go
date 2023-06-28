@@ -73,7 +73,12 @@ func (sw *SQS) Run(ctx context.Context) (err error) {
 		Forever:   sw.live,
 	}, done)
 
-	formatter := display.SQSFormatter{TextFormat: !sw.formatJSON}
+	formatter := display.SQSFormatter{
+		TextFormat:   !sw.formatJSON,
+		Filter:       display.SimpleFilter,
+		Pattern:      sw.pattern,
+		ShouldFilter: len(sw.pattern) > 0,
+	}
 
 	eventChan := stream.Run(ctx)
 	for event := range eventChan {

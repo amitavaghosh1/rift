@@ -25,3 +25,4 @@ Presently it displays in whatever is there in request body
 - [ ] Check possibility of using proto. And how to parse non-JSON body
 - [ ] Improve code
 - [ ] Support more backends
+- [ ] Suppor only matching flag
