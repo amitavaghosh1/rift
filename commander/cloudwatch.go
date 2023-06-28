@@ -79,13 +79,13 @@ func (cwc *CloudWatch) Run(ctx context.Context) (err error) {
 		Forever:      cwc.live,
 	}, done)
 
-	formatter := display.CloudWatchFormatter{
+	formatter := display.NewCloudWatchFormatter(display.CloudWatchFormatter{
 		TextFormat:   !cwc.formatJSON,
 		Pattern:      cwc.pattern,
 		ShouldFilter: len(cwc.pattern) > 0,
 		Filter:       display.SimpleFilter,
-		Protofile:    cwc.protoFile,
-	}
+	}, cwc.protoFile)
+
 	eventChan := stream.Run(ctx)
 	for event := range eventChan {
 		if event.Message != nil {

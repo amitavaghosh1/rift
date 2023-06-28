@@ -5,29 +5,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"rift/models/cloudwatchlog"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 
+	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 type CloudWatchFormatter struct {
-	TextFormat   bool
-	Pattern      string
-	ShouldFilter bool
-	Filter       Filter
-	ProtoFile    string
-	protoMessage *dynamic.Message
+	TextFormat      bool
+	Pattern         string
+	ShouldFilter    bool
+	Filter          Filter
+	protoFile       string
+	protoDescriptor *desc.MessageDescriptor
 }
 
-func (cf CloudWatchFormatter) Init(protoFile string) CloudWatchFormatter {
-	ncf := cf
+func NewCloudWatchFormatter(cf CloudWatchFormatter, protoFile string) CloudWatchFormatter {
+	ncf := &cf
 
 	parser := &protoparse.Parser{}
 	descriptors, err := parser.ParseFiles(protoFile)
@@ -39,21 +37,69 @@ func (cf CloudWatchFormatter) Init(protoFile string) CloudWatchFormatter {
 		log.Fatal(errors.Wrap(err, "failed_to_parse_proto_file"))
 	}
 
-	ncf.ProtoFile = protoFile
+	ncf.protoFile = protoFile
 
-	desc := descriptors[0].FindMessage("LogEvent")
-	ncf.protoMessage = dynamic.NewMessage(desc)
+	desc := descriptors[0].FindMessage("cloudwatchlog.LogEvent")
+	if desc == nil {
+		log.Fatal("couldnot find LogEvent messsage in cloudwatch package. please recheck proto file")
+	}
 
-	return ncf
+	ncf.protoDescriptor = desc
+
+	return *ncf
+}
+
+type DynamicLogEvent map[string]string
+
+// Some default methods
+func (de DynamicLogEvent) GetTime() string {
+	timeStr, ok := de["time"]
+	if ok {
+		return color.CyanString(timeStr)
+	}
+	return timeStr
+}
+
+func (de DynamicLogEvent) GetRequestId() string {
+	requestID, ok := de["request_id"]
+	if ok {
+		return color.GreenString(requestID)
+	}
+
+	return requestID
+}
+
+func (de DynamicLogEvent) GetEnvironment() string {
+	env, ok := de["environment"]
+	if ok {
+		return env
+	}
+
+	return "unparsed"
+}
+
+func (de DynamicLogEvent) GetLevel() string {
+	level, ok := de["level"]
+	if ok {
+		return level
+	}
+
+	return "unknown"
+}
+
+func (de DynamicLogEvent) GetMsg() string {
+	msg, ok := de["msg"]
+	if ok {
+		return msg
+	}
+
+	return ""
 }
 
 func (cf CloudWatchFormatter) Display(streamName string, message string) {
-	if cf.protoMessage == nil {
-		log.Fatal("proto_file_missing")
-	}
+	md := dynamic.NewMessage(cf.protoDescriptor)
 
-	vaiPlease := cf.protoMessage.(proto.Message)
-	err := protojson.Unmarshal([]byte(message), vaiPlease)
+	err := md.UnmarshalJSON([]byte(message))
 	if err != nil {
 		log.Println(errors.Wrap(err, message))
 		return
@@ -62,6 +108,12 @@ func (cf CloudWatchFormatter) Display(streamName string, message string) {
 	formatter := cf.formatJSON
 	if cf.TextFormat {
 		formatter = cf.formatText
+	}
+
+	event := DynamicLogEvent{}
+	for _, field := range md.GetKnownFields() {
+		fieldName := field.GetName()
+		event[fieldName] = fmt.Sprintf("%v", md.GetFieldByName(fieldName))
 	}
 
 	if !cf.ShouldFilter {
@@ -75,14 +127,12 @@ func (cf CloudWatchFormatter) Display(streamName string, message string) {
 
 }
 
-type CloudWatchJSONFormat struct {
-	StreamName string `json:"stream"`
-	*cloudwatchlog.LogEvent
-}
 
-func (cf CloudWatchFormatter) formatJSON(event *cloudwatchlog.LogEvent, streamName string) {
-	f := &CloudWatchJSONFormat{StreamName: streamName, LogEvent: event}
-	b, err := json.Marshal(f)
+func (cf CloudWatchFormatter) formatJSON(event DynamicLogEvent, streamName string) {
+	eventWithStream := event
+	eventWithStream["stream"] = streamName
+
+	b, err := json.Marshal(eventWithStream)
 	if err != nil {
 		log.Println("invalid json in log")
 		return
@@ -91,15 +141,15 @@ func (cf CloudWatchFormatter) formatJSON(event *cloudwatchlog.LogEvent, streamNa
 	fmt.Println(string(b))
 }
 
-func (cf CloudWatchFormatter) formatText(event *cloudwatchlog.LogEvent, streamName string) {
+func (cf CloudWatchFormatter) formatText(event DynamicLogEvent, streamName string) {
 	space := " "
 	displayText := bytes.Buffer{}
 	displayText.WriteString(color.CyanString(streamName))
 	displayText.WriteString(space)
-	displayText.WriteString(color.CyanString(event.GetTime()))
+	displayText.WriteString(event.GetTime())
 	displayText.WriteString(space)
 	displayText.WriteString(" request_id: ")
-	displayText.WriteString(color.GreenString(event.GetRequestId()))
+	displayText.WriteString(event.GetRequestId())
 	displayText.WriteString(space)
 	displayText.WriteString(" environment: ")
 	displayText.WriteString(event.GetEnvironment())
