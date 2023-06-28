@@ -11,7 +11,10 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 
+	"github.com/jhump/protoreflect/desc/protoparse"
+	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 type CloudWatchFormatter struct {
@@ -19,11 +22,38 @@ type CloudWatchFormatter struct {
 	Pattern      string
 	ShouldFilter bool
 	Filter       Filter
+	ProtoFile    string
+	protoMessage *dynamic.Message
+}
+
+func (cf CloudWatchFormatter) Init(protoFile string) CloudWatchFormatter {
+	ncf := cf
+
+	parser := &protoparse.Parser{}
+	descriptors, err := parser.ParseFiles(protoFile)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed_to_read_proto_file"))
+	}
+
+	if len(descriptors) < 1 {
+		log.Fatal(errors.Wrap(err, "failed_to_parse_proto_file"))
+	}
+
+	ncf.ProtoFile = protoFile
+
+	desc := descriptors[0].FindMessage("LogEvent")
+	ncf.protoMessage = dynamic.NewMessage(desc)
+
+	return ncf
 }
 
 func (cf CloudWatchFormatter) Display(streamName string, message string) {
-	event := &cloudwatchlog.LogEvent{}
-	err := protojson.Unmarshal([]byte(message), event)
+	if cf.protoMessage == nil {
+		log.Fatal("proto_file_missing")
+	}
+
+	vaiPlease := cf.protoMessage.(proto.Message)
+	err := protojson.Unmarshal([]byte(message), vaiPlease)
 	if err != nil {
 		log.Println(errors.Wrap(err, message))
 		return

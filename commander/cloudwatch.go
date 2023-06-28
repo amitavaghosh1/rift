@@ -19,6 +19,7 @@ type CloudWatch struct {
 	group        string `validate:"required"`
 	streamName   string `validate:"required"`
 	formatJSON   bool   `validate:"required"`
+	protoFile    string `validate:"required"`
 	live         bool   `validate:"-"`
 	pattern      string `validate:"-"`
 	onlyMatching bool   `validate:"-"`
@@ -34,6 +35,7 @@ func NewCloudWatch() *CloudWatch {
 
 	fs.StringVar(&cw.group, "group", "", "cloudwatch log group name")
 	fs.StringVar(&cw.streamName, "stream", "", "cloudwatch log stream name")
+	fs.StringVar(&cw.protoFile, "proto", "", "proto file name to parse")
 
 	fs.BoolVar(&cw.formatJSON, "json", false, "print in json format")
 	fs.BoolVar(&cw.live, "live", false, "live tail logs")
@@ -82,6 +84,7 @@ func (cwc *CloudWatch) Run(ctx context.Context) (err error) {
 		Pattern:      cwc.pattern,
 		ShouldFilter: len(cwc.pattern) > 0,
 		Filter:       display.SimpleFilter,
+		Protofile:    cwc.protoFile,
 	}
 	eventChan := stream.Run(ctx)
 	for event := range eventChan {

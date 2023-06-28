@@ -21,6 +21,7 @@ type SQS struct {
 	live         bool   `validate:"-"`
 	pattern      string `validate:"-"`
 	onlyMatching bool   `validate:"-"`
+	protoFile    string `validate:"required"`
 }
 
 func NewSQSWatch() *SQS {
@@ -30,6 +31,7 @@ func NewSQSWatch() *SQS {
 	fs.StringVar(&sw.region, "region", "us-west-2", "aws region")
 	fs.StringVar(&sw.profile, "profile", "default", "aws profile. uses default")
 	fs.StringVar(&sw.queueName, "queue", "", "queue name in aws sqs")
+	fs.StringVar(&sw.protoFile, "proto", "", "proto file name to parse")
 
 	fs.BoolVar(&sw.formatJSON, "json", false, "print in json format")
 	fs.BoolVar(&sw.live, "live", false, "live tail logs")
