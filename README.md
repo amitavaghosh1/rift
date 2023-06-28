@@ -20,6 +20,11 @@ There are few fields that are required for a cloudwatch log.
 
 Presently it displays in whatever is there in request body
 
+### Usage
+
+- Download the executable specific to your OS.
+- Build the project run `./release.sh`. And use the executable for your OS
+
 
 ### TODO:
 - [ ] Check possibility of using proto. And how to parse non-JSON body
