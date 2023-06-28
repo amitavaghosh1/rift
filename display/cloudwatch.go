@@ -24,7 +24,7 @@ type CloudWatchFormatter struct {
 	protoDescriptor *desc.MessageDescriptor
 }
 
-func NewCloudWatchFormatter(cf CloudWatchFormatter, protoFile string) CloudWatchFormatter {
+func NewCloudWatchFormatter(cf CloudWatchFormatter, protoFile string) *CloudWatchFormatter {
 	ncf := &cf
 
 	parser := &protoparse.Parser{}
@@ -46,57 +46,10 @@ func NewCloudWatchFormatter(cf CloudWatchFormatter, protoFile string) CloudWatch
 
 	ncf.protoDescriptor = desc
 
-	return *ncf
+	return ncf
 }
 
-type DynamicLogEvent map[string]string
-
-// Some default methods
-func (de DynamicLogEvent) GetTime() string {
-	timeStr, ok := de["time"]
-	if ok {
-		return color.CyanString(timeStr)
-	}
-	return timeStr
-}
-
-func (de DynamicLogEvent) GetRequestId() string {
-	requestID, ok := de["request_id"]
-	if ok {
-		return color.GreenString(requestID)
-	}
-
-	return requestID
-}
-
-func (de DynamicLogEvent) GetEnvironment() string {
-	env, ok := de["environment"]
-	if ok {
-		return env
-	}
-
-	return "unparsed"
-}
-
-func (de DynamicLogEvent) GetLevel() string {
-	level, ok := de["level"]
-	if ok {
-		return level
-	}
-
-	return "unknown"
-}
-
-func (de DynamicLogEvent) GetMsg() string {
-	msg, ok := de["msg"]
-	if ok {
-		return msg
-	}
-
-	return ""
-}
-
-func (cf CloudWatchFormatter) Display(streamName string, message string) {
+func (cf *CloudWatchFormatter) Display(streamName string, message string) {
 	md := dynamic.NewMessage(cf.protoDescriptor)
 
 	err := md.UnmarshalJSON([]byte(message))
@@ -110,7 +63,7 @@ func (cf CloudWatchFormatter) Display(streamName string, message string) {
 		formatter = cf.formatText
 	}
 
-	event := DynamicLogEvent{}
+	event := DynamicCloudWatchLogEvent{}
 	for _, field := range md.GetKnownFields() {
 		fieldName := field.GetName()
 		event[fieldName] = fmt.Sprintf("%v", md.GetFieldByName(fieldName))
@@ -127,8 +80,54 @@ func (cf CloudWatchFormatter) Display(streamName string, message string) {
 
 }
 
+type DynamicCloudWatchLogEvent map[string]string
 
-func (cf CloudWatchFormatter) formatJSON(event DynamicLogEvent, streamName string) {
+// Some default methods
+func (de DynamicCloudWatchLogEvent) GetTime() string {
+	timeStr, ok := de["time"]
+	if ok {
+		return color.CyanString(timeStr)
+	}
+	return timeStr
+}
+
+func (de DynamicCloudWatchLogEvent) GetRequestId() string {
+	requestID, ok := de["request_id"]
+	if ok {
+		return color.GreenString(requestID)
+	}
+
+	return requestID
+}
+
+func (de DynamicCloudWatchLogEvent) GetEnvironment() string {
+	env, ok := de["environment"]
+	if ok {
+		return env
+	}
+
+	return "unparsed"
+}
+
+func (de DynamicCloudWatchLogEvent) GetLevel() string {
+	level, ok := de["level"]
+	if ok {
+		return level
+	}
+
+	return "unknown"
+}
+
+func (de DynamicCloudWatchLogEvent) GetMsg() string {
+	msg, ok := de["msg"]
+	if ok {
+		return msg
+	}
+
+	return ""
+}
+
+func (cf *CloudWatchFormatter) formatJSON(event DynamicCloudWatchLogEvent, streamName string) {
 	eventWithStream := event
 	eventWithStream["stream"] = streamName
 
@@ -141,7 +140,7 @@ func (cf CloudWatchFormatter) formatJSON(event DynamicLogEvent, streamName strin
 	fmt.Println(string(b))
 }
 
-func (cf CloudWatchFormatter) formatText(event DynamicLogEvent, streamName string) {
+func (cf *CloudWatchFormatter) formatText(event DynamicCloudWatchLogEvent, streamName string) {
 	space := " "
 	displayText := bytes.Buffer{}
 	displayText.WriteString(color.CyanString(streamName))

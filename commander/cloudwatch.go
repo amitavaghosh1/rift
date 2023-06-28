@@ -3,7 +3,6 @@ package commander
 import (
 	"context"
 	"flag"
-	"log"
 	"rift/display"
 	"rift/internal/pkg/cloudwatch"
 
@@ -47,8 +46,7 @@ func NewCloudWatch() *CloudWatch {
 }
 
 func (cwc *CloudWatch) Parse(cx context.Context, cmdStr ...string) (err error) {
-	log.Println("running ", cmdStr)
-
+	// log.Println("running ", cmdStr)
 	if cwc.fs == nil {
 		return ErrUnInitialized
 	}

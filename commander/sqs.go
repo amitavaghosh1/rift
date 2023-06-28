@@ -3,7 +3,6 @@ package commander
 import (
 	"context"
 	"flag"
-	"log"
 	"rift/display"
 	"rift/internal/pkg/sqsreader"
 
@@ -21,7 +20,7 @@ type SQS struct {
 	live         bool   `validate:"-"`
 	pattern      string `validate:"-"`
 	onlyMatching bool   `validate:"-"`
-	protoFile    string `validate:"required"`
+	protoFile    string `validate:"omitempty"`
 }
 
 func NewSQSWatch() *SQS {
@@ -43,8 +42,7 @@ func NewSQSWatch() *SQS {
 }
 
 func (swc *SQS) Parse(ctx context.Context, cmdStr ...string) (err error) {
-	log.Println("running ", cmdStr)
-
+	// log.Println("running ", cmdStr)
 	if swc.fs == nil {
 		return ErrUnInitialized
 	}
@@ -60,7 +58,8 @@ func (swc *SQS) Parse(ctx context.Context, cmdStr ...string) (err error) {
 	if err != nil {
 		err = errors.Wrap(err, "validation_failed")
 	}
-	return nil
+
+	return err
 }
 
 func (sw *SQS) Run(ctx context.Context) (err error) {
