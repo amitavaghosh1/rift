@@ -11,6 +11,9 @@ import (
 
 type SQSFormatter struct {
 	TextFormat      bool
+	Pattern         string
+	ShouldFilter    bool
+	Filter          Filter
 	protoFile       string
 	protoDescriptor *desc.MessageDescriptor
 }
@@ -20,7 +23,7 @@ func NewSQSFormatter(sf SQSFormatter, protoFile string) *SQSFormatter {
 	if len(protoFile) == 0 {
 		return nsf
 	}
-	
+
 	parser := &protoparse.Parser{}
 	descriptors, err := parser.ParseFiles(protoFile)
 	if err != nil {
@@ -43,8 +46,18 @@ func NewSQSFormatter(sf SQSFormatter, protoFile string) *SQSFormatter {
 }
 
 func (sf *SQSFormatter) Display(queueName, message string) {
-	fmt.Println(queueName)
-	fmt.Println(message)
+	event := DynamicCloudWatchLogEvent{
+		"queue":   queueName,
+		"message": message,
+	}
+	if !sf.ShouldFilter {
+		fmt.Println(event)
+		return
+	}
+
+	if sf.Filter(message, sf.Pattern) {
+		fmt.Println(event)
+	}
 }
 
 type DynamicSQSLogEvent map[string]string
