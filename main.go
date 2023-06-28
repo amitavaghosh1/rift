@@ -9,7 +9,11 @@ import (
 
 func main() {
 	ctx := context.Background()
-	log.SetFlags(log.Lshortfile)
+	log.SetFlags(0)
+
+	if os.Getenv("DEBUG") == "debug" {
+		log.SetFlags(log.Lshortfile)
+	}
 
 	sub := os.Args[1]
 
@@ -21,7 +25,8 @@ func main() {
 	case "sqs":
 		cmd = commander.NewSQSWatch()
 	default:
-		cmd = commander.NoopCommander{}
+		Help()
+		return
 	}
 
 	err := cmd.Parse(ctx, os.Args[2:]...)
@@ -33,4 +38,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
+}
+
+func Help() {
+	helpString := `Usage of rift:
+
+cloudwatch [options]
+	get logs from aws cloudwatch
+
+sqs [options]
+	get logs from sqs queue. this might change message visibility
+	`
+	log.Println(helpString)
 }

@@ -3,7 +3,6 @@ package commander
 import (
 	"context"
 	"flag"
-	"log"
 	"rift/display"
 	"rift/internal/pkg/sqsreader"
 
@@ -21,6 +20,7 @@ type SQS struct {
 	live         bool   `validate:"-"`
 	pattern      string `validate:"-"`
 	onlyMatching bool   `validate:"-"`
+	protoFile    string `validate:"omitempty"`
 }
 
 func NewSQSWatch() *SQS {
@@ -30,6 +30,7 @@ func NewSQSWatch() *SQS {
 	fs.StringVar(&sw.region, "region", "us-west-2", "aws region")
 	fs.StringVar(&sw.profile, "profile", "default", "aws profile. uses default")
 	fs.StringVar(&sw.queueName, "queue", "", "queue name in aws sqs")
+	fs.StringVar(&sw.protoFile, "proto", "", "proto file name to parse")
 
 	fs.BoolVar(&sw.formatJSON, "json", false, "print in json format")
 	fs.BoolVar(&sw.live, "live", false, "live tail logs")
@@ -41,8 +42,7 @@ func NewSQSWatch() *SQS {
 }
 
 func (swc *SQS) Parse(ctx context.Context, cmdStr ...string) (err error) {
-	log.Println("running ", cmdStr)
-
+	// log.Println("running ", cmdStr)
 	if swc.fs == nil {
 		return ErrUnInitialized
 	}
@@ -58,7 +58,8 @@ func (swc *SQS) Parse(ctx context.Context, cmdStr ...string) (err error) {
 	if err != nil {
 		err = errors.Wrap(err, "validation_failed")
 	}
-	return nil
+
+	return err
 }
 
 func (sw *SQS) Run(ctx context.Context) (err error) {
